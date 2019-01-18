@@ -10,6 +10,7 @@ whip_time = 0
 ground = False
 direction = 1
 position = 0
+time = millis() / 1000
 drift = 0
 enemy_randomizer = 0
 yspeed = 0
@@ -23,12 +24,13 @@ last_attack = -1
 screen = "menu"
 fire_falling = []
 fire_falling_right = []
+win = False
 
 while len(fire_falling_right) != 3:
-    fire_falling_right.append(PVector(-50,-50))
+    fire_falling_right.append(PVector(-50, -50))
 
 while len(fire_falling) != 3:
-    fire_falling.append(PVector(-50,-50))
+    fire_falling.append(PVector(-50, -50))
 
 for i in range(0, 233):
     buttons.append(False)
@@ -45,11 +47,13 @@ def draw():
     global fire_falling
     global fire_falling_right
     global fireball_single
+    global time
     global enemy_attack_time
     global enemy_hitbox
     global boss_pos
     global position
     global enemy_health
+    global win
     global health
     global player_pos
     global yspeed
@@ -70,21 +74,19 @@ def draw():
     fill(180, 150, 90)
     rect(-1, 650, 902, 75)
     noStroke()
+    
+    #main menu
     if screen == "menu":
         background(0)
         fill(255)
+        textSize(50)
+        text("Boss Fight", 325,300)
         rect(300, 400, 300, 70)
+        rect(300, 500, 300, 70)
         fill(0)
         textSize(50)
         text("Start", 390, 450)
-        fill(255)
-        textSize(32)
-        text("""Instructions:
-Move with the left and right arrow keys
-Attack with z and jump with x
-duck with the down arrow key
-
-This is a very early version of the game""",100,100)
+        text("Instructions", 305, 550)
         if mouseX >= 300 and mouseX <= 600:
             if mouseY >= 400 and mouseY <= 470:
                 if mousePressed == True:
@@ -103,6 +105,7 @@ This is a very early version of the game""",100,100)
                     enemy_randomizer = 0
                     yspeed = 0
                     enemy_attack = 0
+                    time = millis() / 1000
                     enemy_attack_time = 0
                     pilar_pos = 0
                     attack_done = True
@@ -110,30 +113,36 @@ This is a very early version of the game""",100,100)
                     if_hit = False
                     last_attack = -1
                     screen = "game"
+        if mouseX >= 300 and mouseX <= 600:
+            if mouseY >= 500 and mouseY <= 570:
+                if mousePressed == True:
+                    screen = "instructions"
 
+#Game code
     elif screen == "game":
+        #Attack RNG
         if attack_done == True and enemy_attack_time + 2000 - (50 * (20 - enemy_health)) <= millis() and enemy_health > 0:
-            if enemy_health <= 5:
+            if enemy_health <= 10:
                 enemy_randomizer = random(4)
             else:
                 enemy_randomizer = random(3)
-            print(enemy_randomizer)
-            #print(enemy_randomizer)
-            #print(2000 - (50 * (20 - enemy_health)))
-
-    #add more rng 
+        #makes sure the same attack isnt used twice in a row
         if enemy_randomizer <= last_attack and enemy_randomizer >= last_attack - 1 and enemy_randomizer != 0:
             if 3 <= enemy_randomizer <= 4 and enemy_health <= 5 or 2 <= enemy_randomizer <= 3 and enemy_health > 5:
                 enemy_randomizer -= 1
             else:
                 enemy_randomizer += 1
+        #stops a glitch from happening
         if enemy_randomizer == 0:
             True
+        #sets up teleporting attack
         elif enemy_randomizer < 1:
             enemy_randomizer = 0
             enemy_attack = 1
             attack_done = False
             enemy_attack_time = millis()
+
+        #sets up fireball attack
         elif enemy_randomizer < 2:
             if boss_pos.x == 50:
                 if random(2) <= 1:
@@ -150,13 +159,15 @@ This is a very early version of the game""",100,100)
             attack_done = False
             enemy_attack = 2
             last_attack = 2
+        #sets up beam attack
         elif enemy_randomizer < 3:
             enemy_randomizer = 0
             enemy_attack_time = millis()
             attack_done = False
             enemy_attack = 3
+        #sets up special attack
         elif enemy_randomizer < 4:
-            enemy_attack = 4 
+            enemy_attack = 4
             enemy_randomizer = 0
             enemy_attack_time = millis()
             attack_done = False
@@ -252,7 +263,7 @@ This is a very early version of the game""",100,100)
                 attack_done = True
                 enemy_attack = 0
                 enemy_attack_time = millis()
-            #DO AN ATTACK WHERE THE ENEMY FLIES WITH SOME fireball_single CIRCLING AROUND HIM AND YOU HAVE TO JUMP OVER THEM  
+
 
 
         for i in fire_falling:
@@ -384,10 +395,10 @@ This is a very early version of the game""",100,100)
 
     #player movement
         if ground == True and whip_time + 600 <= millis():
-            if buttons[37] == True and buttons[40] == False:
+            if buttons[37] == True and buttons[40] == False and player_pos.x > 0:
                 player_pos.x -= 3
                 direction = 0
-            elif buttons[39] == True and buttons[40] == False:
+            elif buttons[39] == True and buttons[40] == False and player_pos.x < 860:
                 player_pos.x += 3
                 direction = 1
 
@@ -402,7 +413,7 @@ This is a very early version of the game""",100,100)
             player_pos.y -= 1
             ground = False
 
-    #its okay but you should fix this tyler
+    #jumping physics
         if ground == False:
             player_pos.x += drift
             player_pos.y += yspeed
@@ -421,19 +432,97 @@ This is a very early version of the game""",100,100)
         if player_pos.y >= 560:
             player_pos.y = 560
 
+        #stops player from going out of bounds
+        if player_pos.x > 860:
+            player_pos.x = 860
+        elif player_pos.x < 0:
+            player_pos.x = 0
 
     #extra floor code to cover attacks
         fill(180, 150, 90)
         rect(-1, 650, 902, 75)
 
+
+        if enemy_attack != 4 and boss_pos.x + 140 > player_pos.x + 40 > boss_pos.x:
+            health -= 1
         if enemy_health < 1: 
             boss_pos = PVector(-50, -50)
-            screen = "menu"
+            win = True
+            screen = "gameover"
+            time = millis() / 1000 - time
+    
+        if health <= 0:
+            screen = "gameover"
+            win = False
+            time = millis() / 1000 - time
+    elif screen == "gameover":
+        fill(0)
+        rect(300, 100, 300, 500)
+        fill(255)
+        textSize(50)
+        if win == False:
+            text("You Lost!", 335, 200)
+        else:
+            text("You Won!", 335, 200)
 
-        if health < 1:
-            True
-            screen = "menu"
-
+        text("Time:{}".format(time), 360, 500)
+        fill(255)
+        rect(300, 210, 300, 70)
+        rect(300, 310, 300, 70)
+        fill(0)
+        textSize(38)
+        text("Play Again?", 350, 260)
+        text("Main Menu", 350, 360)
+        if mouseX >= 300 and mouseX <= 600:
+            if mouseY >= 210 and mouseY <= 280:
+                if mousePressed == True:
+                    player_pos = PVector(200, 560)
+                    boss_pos = PVector(750, 400)
+                    jump_time = 5
+                    health = 10
+                    boss_time = 0
+                    enemy_hitbox = 0
+                    enemy_health = 20
+                    whip_time = 0
+                    ground = False
+                    direction = 1
+                    position = 0
+                    drift = 0
+                    enemy_randomizer = 0
+                    yspeed = 0
+                    enemy_attack = 0
+                    time = millis() / 1000
+                    enemy_attack_time = 0
+                    pilar_pos = 0
+                    attack_done = True
+                    fireball_single = 0
+                    if_hit = False
+                    last_attack = -1
+                    screen = "game"
+        if mouseX >= 300 and mouseX <= 600:
+            if mouseY >= 310 and mouseY <= 380:
+                if mousePressed == True:
+                    screen = "menu"
+    elif screen == "instructions":
+        background(0)
+        fill(255)
+        textSize(32)
+        text("""
+                        Instructions:
+                        
+Defeat the boss.
+Move with the left and right arrow keys.
+Attack with Z and jump with X.
+Duck with the down arrow key.""", 100, 100)
+        if mouseX >= 300 and mouseX <= 600:
+            if mouseY >= 600 and mouseY <= 670:
+                if mousePressed == True:
+                    screen = "menu"
+        fill(255)
+        rect(300, 600, 300, 70)
+        fill(0)
+        textSize(38)
+        text("Main Menu", 350, 650)
 def keyPressed():
     global buttons
     buttons[keyCode] = True
