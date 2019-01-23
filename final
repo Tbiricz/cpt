@@ -35,6 +35,7 @@ while len(fire_falling) != 3:
 for i in range(0, 233):
     buttons.append(False)
 
+
 def setup():
     size(900, 700)
 
@@ -74,7 +75,7 @@ def draw():
     fill(180, 150, 90)
     rect(-1, 650, 902, 75)
     noStroke()
-    
+
     #main menu
     if screen == "menu":
         background(0)
@@ -447,12 +448,12 @@ def draw():
 
         if enemy_attack != 4 and boss_pos.x + 140 > player_pos.x + 40 > boss_pos.x:
             health -= 1
-        if enemy_health < 1: 
+        if enemy_health < 1:
             boss_pos = PVector(-50, -50)
             win = True
             screen = "gameover"
             time = millis() / 1000 - time
-    
+
         if health <= 0:
             screen = "gameover"
             win = False
@@ -525,9 +526,13 @@ Duck with the down arrow key.""", 100, 100)
         fill(0)
         textSize(38)
         text("Main Menu", 350, 650)
+
+
 def keyPressed():
     global buttons
     buttons[keyCode] = True
+
+
 def keyReleased():
     global buttons
     buttons[keyCode] = False
